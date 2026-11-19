@@ -1,0 +1,8 @@
+streamlit
+mysql-connector-python
+pandas
+bcrypt
+qrcode[pil]
+fpdf2
+opencv-python-headless
+numpy
