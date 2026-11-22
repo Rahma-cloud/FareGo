@@ -1,8 +1,10 @@
 streamlit
 mysql-connector-python
-pandas
+python-dotenv
 bcrypt
 qrcode[pil]
+pandas
+anthropic
 fpdf2
 opencv-python-headless
 numpy
