@@ -8,3 +8,4 @@ anthropic
 fpdf2
 opencv-python-headless
 numpy
+anthropic
