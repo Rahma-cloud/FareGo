@@ -1,6 +1,11 @@
 import streamlit as st
 from lib.receipts import make_receipt_pdf
 
+user = st.session_state.get("user")
+if user is None:
+    st.warning("Please log in on the main page first.")
+    st.stop()
+
 st.title("Receipts")
 
 sample = {
