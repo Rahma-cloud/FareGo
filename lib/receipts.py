@@ -34,3 +34,11 @@ def make_receipt_pdf(receipt):
         pdf.cell(50, 10, label)
         pdf.cell(0, 10, str(value), new_x="LMARGIN", new_y="NEXT")
     return bytes(pdf.output())
+
+def monthly_summary(payments, year, month):
+    month_rows = [
+        p for p in payments
+        if p["created_at"].year == year and p["created_at"].month == month
+    ]
+    total = sum(float(p["amount"]) for p in month_rows)
+    return {"rides": len(month_rows), "total": total}
