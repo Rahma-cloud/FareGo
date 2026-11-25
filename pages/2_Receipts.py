@@ -1,5 +1,5 @@
 import streamlit as st
-from lib.receipts import make_receipt_pdf
+from lib.receipts import get_receipts_for_student, make_receipt_pdf
 
 user = st.session_state.get("user")
 if user is None:
@@ -8,17 +8,17 @@ if user is None:
 
 st.title("Receipts")
 
-sample = {
-    "receipt_no": "FG-000001",
-    "created_at": "2026-11-24 12:00",
-    "amount": 200,
-    "driver_name": "Test Driver",
-    "bus_number": "B12",
-}
+receipts = get_receipts_for_student(user["id"])
 
-st.download_button(
-    "Download sample receipt",
-    data=make_receipt_pdf(sample),
-    file_name="receipt.pdf",
-    mime="application/pdf",
-)
+if not receipts:
+    st.info("No receipts yet. They appear after you pay a fare.")
+
+for r in receipts:
+    st.write(f"{r['receipt_no']} | NGN {r['amount']} | {r['driver_name']} | {r['created_at']}")
+    st.download_button(
+        "Download PDF",
+        data=make_receipt_pdf(r),
+        file_name=f"{r['receipt_no']}.pdf",
+        mime="application/pdf",
+        key=r["receipt_no"],
+    )
