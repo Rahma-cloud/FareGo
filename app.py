@@ -1,29 +1,19 @@
-import bcrypt
 import streamlit as st
 
-from lib.db import query
+from lib.auth import require_login
+from lib.wallet import get_balance
 
 st.set_page_config(page_title="FareGo", page_icon="🚌")
+
+# Shows the shared sign-in form (lib/auth.py) until the user is logged in.
+user = require_login()
+
 st.title("FareGo")
+st.success(f"Welcome, {user['name']} ({user['role']})")
+st.metric("Wallet balance", f"₦{get_balance(user['user_id']):,.2f}")
 
-if "user" not in st.session_state:
-    st.session_state.user = None
-
-if st.session_state.user is None:
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
-    if st.button("Log in"):
-        rows = query("SELECT * FROM users WHERE email = %s", (email,))
-        if rows and bcrypt.checkpw(password.encode(), rows[0]["password_hash"].encode()):
-            st.session_state.user = rows[0]
-            st.rerun()
-        else:
-            st.error("Wrong email or password")
+if user["role"] == "student":
+    st.page_link("pages/4_Wallet.py", label="Top up my wallet and see my transactions")
+    st.info("To pay, scan the QR code on the shuttle with your phone camera.")
 else:
-    u = st.session_state.user
-    st.success(f"Welcome, {u['full_name']} ({u['role']})")
-    bal = query("SELECT balance FROM wallets WHERE user_id = %s", (u["id"],))[0]["balance"]
-    st.metric("Wallet balance", f"₦{bal:,.2f}")
-    if st.button("Log out"):
-        st.session_state.user = None
-        st.rerun()
+    st.page_link("pages/5_Driver.py", label="Open my driver dashboard")

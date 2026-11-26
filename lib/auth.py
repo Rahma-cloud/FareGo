@@ -77,10 +77,24 @@ def login_form():
             st.error("Wrong email or password.")
 
 
+def _normalize(user):
+    """The session may hold a user saved by another page (for example app.py)
+    with only the users-table columns (id, full_name, role...). Rebuild it so
+    it always has user_id, name, role and driver_id."""
+    if all(k in user for k in ("user_id", "name", "role", "driver_id")):
+        return user
+    uid = user.get("user_id") or user.get("id")
+    rows = query("SELECT * FROM users WHERE id = %s", (uid,)) if uid else []
+    return _build_user(rows[0]) if rows else None
+
+
 def require_login(role=None):
     """Call at the top of any page. Returns the logged-in user as a dict:
     {"user_id", "name", "role" ("student" or "driver"), "driver_id"}."""
     user = st.session_state.get("user")
+    if user:
+        user = _normalize(user)
+        st.session_state["user"] = user  # None here means: show the login form
     if not user:
         login_form()
         st.stop()
