@@ -139,6 +139,7 @@ def signup_form():
         )
         bus = st.text_input("Bus number (for example BUS-09)", key="su_bus") if role == "driver" else None
         submitted = st.form_submit_button("Create account")
+    st.caption("Free to join. Pay your shuttle from your phone, no cash needed.")
     if submitted:
         if password != confirm:
             st.error("The two passwords do not match.")
@@ -152,7 +153,7 @@ def signup_form():
 
 
 def login_form():
-    st.title("FareGo")
+    st.markdown("#### Log in or create an account")
     tab_login, tab_signup = st.tabs(["Log in", "Sign up"])
     with tab_login:
         with st.form("login_form"):

@@ -4,8 +4,7 @@ import streamlit as st
 try:
     import tomllib  # Python 3.11+
 except ModuleNotFoundError:
-    import tomli as tomllib  # older Python (installed from requirements.txt)
-
+        import tomli as tomllib  # older Python (installed from requirements.txt)
 
 def _cfg():
     try:
