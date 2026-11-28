@@ -50,6 +50,18 @@ div[data-testid="stDownloadButton"] > button {
 /* sidebar */
 section[data-testid="stSidebar"] { background: #EAF4EE; }
 
+/* "Powered by FareGo" line at the bottom of every page */
+.block-container::after {
+    content: "Powered by FareGo";
+    display: block;
+    text-align: center;
+    color: #6B7F75;
+    font-size: 0.85rem;
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid #D5E6DC;
+}
+
 footer { visibility: hidden; }
 </style>
 """
@@ -88,6 +100,12 @@ def page_header(title, subtitle="", icon=""):
         f"<div><h1>{title}</h1>{sub}</div></div></div>",
         unsafe_allow_html=True,
     )
+
+
+def date_config():
+    """Column setting for tables with a Date column: 28 Nov 2026, 02:45 pm.
+    Keeps real dates underneath, so clicking the header still sorts correctly."""
+    return {"Date": st.column_config.DatetimeColumn("Date", format="DD MMM YYYY, hh:mm a")}
 
 
 def steps(items):
