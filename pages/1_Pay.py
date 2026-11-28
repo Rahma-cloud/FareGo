@@ -3,6 +3,7 @@ import streamlit as st
 
 from lib.auth import require_login, verify_pin, user_name
 from lib.db import query, get_fare, create_payment
+from lib.style import page_header
 from lib.wallet import get_balance
 
 # Person C's duplicate check. Open lib/detection.py and make sure the function
@@ -13,7 +14,7 @@ except ImportError:
     def check_duplicate(student_id, driver_id, amount):
         return False
 
-st.title("Pay your shuttle driver")
+page_header("Pay your shuttle driver", "Scan, confirm with your PIN and ride.", "🚌")
 
 # 1. Remember which driver's QR code was scanned (so it survives the login step)
 scanned = st.query_params.get("driver")

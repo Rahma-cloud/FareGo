@@ -4,12 +4,13 @@ import streamlit as st
 from lib.auth import require_login, user_name
 from lib.db import query
 from lib.qr import driver_link, qr_png_bytes
+from lib.style import page_header
 from lib.wallet import get_balance, driver_history
 
 user = require_login("driver")
 driver_id = user["driver_id"]
 
-st.title("Driver dashboard")
+page_header("Driver dashboard", "See payments arrive in real time.", "🚌")
 
 # Only payments that arrive AFTER this page opens trigger the green banner
 if "baseline_tx" not in st.session_state:

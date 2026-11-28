@@ -2,11 +2,12 @@
 import streamlit as st
 
 from lib.auth import require_login
+from lib.style import page_header
 from lib.wallet import get_balance, top_up, student_history
 
 user = require_login("student")
 
-st.title("My wallet")
+page_header("My wallet", "Top up and track every ride.", "💳")
 
 
 def _do_topup():

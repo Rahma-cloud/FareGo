@@ -1,6 +1,7 @@
 import streamlit as st
 
 from lib.auth import require_login
+from lib.style import page_header
 from lib.wallet import get_balance
 
 st.set_page_config(page_title="FareGo", page_icon="🚌")
@@ -8,7 +9,7 @@ st.set_page_config(page_title="FareGo", page_icon="🚌")
 # Shows the shared sign-in form (lib/auth.py) until the user is logged in.
 user = require_login()
 
-st.title("FareGo")
+page_header("FareGo", "Pay your shuttle in seconds.", "🚌")
 st.success(f"Welcome, {user['name']} ({user['role']})")
 st.metric("Wallet balance", f"₦{get_balance(user['user_id']):,.2f}")
 
