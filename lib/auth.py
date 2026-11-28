@@ -3,10 +3,13 @@
 Uses the existing users table from seed.py: email, password_hash, pin_hash
 (both bcrypt) and role.
 """
+import re
+import secrets
+
 import bcrypt
 import streamlit as st
 
-from lib.db import query
+from lib.db import get_conn, query
 
 
 # ---------- hashing (bcrypt, same as seed.py) ----------
@@ -60,21 +63,111 @@ def verify_pin(user_id, pin):
     return bool(rows) and verify_secret(pin, rows[0]["pin_hash"])
 
 
+# ---------- sign up ----------
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def create_account(full_name, email, password, pin, role, bus_number=None):
+    """Creates the user, their wallet (and a driver row for drivers) as one
+    all-or-nothing step. Returns (user_id, None) or (None, error message)."""
+    full_name = (full_name or "").strip()
+    email = (email or "").strip().lower()
+    if not full_name:
+        return None, "Please enter your full name."
+    if not _EMAIL_RE.match(email):
+        return None, "Please enter a valid email address."
+    if len(password or "") < 8:
+        return None, "Password must be at least 8 characters."
+    if not (len(pin or "") == 4 and pin.isdigit()):
+        return None, "PIN must be exactly 4 digits."
+    if role not in ("student", "driver"):
+        return None, "Please choose student or driver."
+    if role == "driver" and not (bus_number or "").strip():
+        return None, "Please enter your bus number."
+    # Keep within the column sizes in the database
+    if len(full_name) > 100:
+        return None, "Name is too long (100 characters at most)."
+    if len(email) > 120:
+        return None, "Email is too long (120 characters at most)."
+    if role == "driver" and len(bus_number.strip()) > 20:
+        return None, "Bus number is too long (20 characters at most)."
+
+    conn = get_conn()
+    try:
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+        if cur.fetchall():
+            return None, "An account with this email already exists. Please log in."
+        cur.execute(
+            "INSERT INTO users (full_name, email, password_hash, pin_hash, role) "
+            "VALUES (%s, %s, %s, %s, %s)",
+            (full_name, email, hash_secret(password), hash_secret(pin), role),
+        )
+        user_id = cur.lastrowid
+        cur.execute("INSERT INTO wallets (user_id, balance) VALUES (%s, 0)", (user_id,))
+        if role == "driver":
+            while True:  # random QR code value that is not used yet
+                code = f"DRV-{secrets.token_hex(3).upper()}"
+                cur.execute("SELECT id FROM drivers WHERE qr_code = %s", (code,))
+                if not cur.fetchall():
+                    break
+            cur.execute(
+                "INSERT INTO drivers (user_id, bus_number, qr_code) VALUES (%s, %s, %s)",
+                (user_id, bus_number.strip(), code),
+            )
+        conn.commit()
+        return user_id, None
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
 # ---------- Streamlit helpers ----------
+def signup_form():
+    # The role choice sits outside the form so the bus-number box can appear
+    # as soon as "Driver" is picked.
+    role = st.radio("I am a...", ["Student", "Driver"], horizontal=True, key="su_role").lower()
+    with st.form("signup_form"):
+        full_name = st.text_input("Full name", key="su_name")
+        email = st.text_input("Email", key="su_email")
+        password = st.text_input("Password (at least 8 characters)", type="password", key="su_pw")
+        confirm = st.text_input("Confirm password", type="password", key="su_pw2")
+        pin = st.text_input(
+            "4-digit PIN (used to confirm payments)", type="password", max_chars=4, key="su_pin"
+        )
+        bus = st.text_input("Bus number (for example BUS-09)", key="su_bus") if role == "driver" else None
+        submitted = st.form_submit_button("Create account")
+    if submitted:
+        if password != confirm:
+            st.error("The two passwords do not match.")
+            return
+        user_id, error = create_account(full_name, email, password, pin, role, bus)
+        if error:
+            st.error(error)
+            return
+        st.session_state["user"] = authenticate(email.strip().lower(), password)
+        st.rerun()
+
+
 def login_form():
     st.title("FareGo")
-    st.subheader("Log in")
-    with st.form("login_form"):
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Log in")
-    if submitted:
-        user = authenticate(email.strip().lower(), password)
-        if user:
-            st.session_state["user"] = user
-            st.rerun()
-        else:
-            st.error("Wrong email or password.")
+    tab_login, tab_signup = st.tabs(["Log in", "Sign up"])
+    with tab_login:
+        with st.form("login_form"):
+            email = st.text_input("Email", key="login_email")
+            password = st.text_input("Password", type="password", key="login_pw")
+            submitted = st.form_submit_button("Log in")
+        if submitted:
+            user = authenticate(email.strip().lower(), password)
+            if user:
+                st.session_state["user"] = user
+                st.rerun()
+            else:
+                st.error("Wrong email or password.")
+    with tab_signup:
+        signup_form()
 
 
 def _normalize(user):

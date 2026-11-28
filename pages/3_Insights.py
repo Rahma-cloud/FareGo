@@ -1,8 +1,15 @@
-import altair as alt
-import pandas as pd
 import streamlit as st
 
-from lib.db import query
+from lib.auth import require_login
+from lib.style import page_header
+from lib.db import query   
+
+page_header("Insights", "See where your money goes.", "📊")
+user = require_login()
+
+import altair as alt
+import pandas as pd
+
 from lib.insights import weekly_spending, monthly_spending, weekly_income
 
 

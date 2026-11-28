@@ -1,6 +1,14 @@
+import streamlit as st
+
+from lib.auth import require_login
+from lib.style import page_header
+from lib.db import query   # whatever they already import
+
+page_header("Receipts", "Your payments, in writing.", "🧾")
+user = require_login()
+
 from datetime import date
 
-import streamlit as st
 from lib.receipts import (
     get_receipts_for_student,
     make_monthly_report_pdf,
